@@ -1,13 +1,16 @@
 {
   "name": "TB Coin",
   "symbol": "TB",
-  "description": "The best meme token in the Solana community",
-  "image": "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/ICONOFONDOAZULCLARO.png",
-  "external_url": "https://your-website.com",
-  "attributes": [
-    {
-      "trait_type": "Type",
-      "value": "Meme Coin"
-    }
-  ]
+  "image": "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/tbcoin_logo.png",
+  "description": "Token TB Coin",
+  "seller_fee_basis_points": 0,
+  "attributes": [],
+  "properties": {
+    "files": [
+      {
+        "uri": "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/tbcoin_logo.png",
+        "type": "image/png"
+      }
+    ]
+  }
 }

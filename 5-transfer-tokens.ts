@@ -1,3 +1,5 @@
+// URI de metadata para el logo
+const metadataUri = "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/metadata.json";
 import { getOrCreateAssociatedTokenAccount, transfer } from "@solana/spl-token";
 import 'dotenv/config';
 import {

@@ -17,12 +17,15 @@
     "url": "https://github.com/sjhallo07/tbcoin-assets/issues"
   },
   "homepage": "https://github.com/sjhallo07/tbcoin-assets#readme",
+  "logo": "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/ICONOFONDOAZULCLARO.png",
   "dependencies": {
     "@metaplex-foundation/mpl-token-metadata": "^2.13.0",
     "@solana-developers/helpers": "^2.8.1",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
+    "bip39": "^3.1.0",
     "dotenv": "^17.2.2",
+    "ed25519-hd-key": "^1.3.0",
     "esrun": "^3.2.30"
   }
 }

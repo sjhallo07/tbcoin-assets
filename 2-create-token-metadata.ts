@@ -16,7 +16,7 @@ const user = getKeypairFromEnvironment("SECRET_KEY");
 const connection = new Connection(clusterApiUrl("devnet"));
 
 // REPLACE WITH YOUR TOKEN MINT ADDRESS
-const tokenMintAccount = new PublicKey("2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY");
+const tokenMintAccount = new PublicKey("4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
 
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
