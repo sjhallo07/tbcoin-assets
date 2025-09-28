@@ -1,0 +1,11 @@
+# Ignore environment files
+.env
+
+# Ignore node modules
+node_modules/
+
+# Ignore log files
+*.log
+
+# Ignore generated keypair script (optional)
+generate-keypair.js

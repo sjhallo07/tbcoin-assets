@@ -1,0 +1,40 @@
+import { getOrCreateAssociatedTokenAccount, transfer } from "@solana/spl-token";
+import 'dotenv/config';
+import {
+  getExplorerLink,
+  getKeypairFromEnvironment,
+} from "@solana-developers/helpers";
+import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
+
+const connection = new Connection(clusterApiUrl("devnet"));
+const sender = getKeypairFromEnvironment("SECRET_KEY"); // keypair: 2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY
+
+// REPLACE WITH YOUR ADDRESSES
+const tokenMintAccount = new PublicKey("2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY");
+const recipient = new PublicKey("RECIPIENT_PUBLIC_KEY_HERE");
+
+const sourceAccount = await getOrCreateAssociatedTokenAccount(
+  connection,
+  sender,
+  tokenMintAccount,
+  sender.publicKey
+);
+
+const destAccount = await getOrCreateAssociatedTokenAccount(
+  connection,
+  sender,
+  tokenMintAccount,
+  recipient
+);
+
+// Transfer 100 TB Coins
+const signature = await transfer(
+  connection,
+  sender,
+  sourceAccount.address,
+  destAccount.address,
+  sender,
+  100 * 100 // 100 × 10^2
+);
+
+console.log(`✅ Transfer completed: ${getExplorerLink("transaction", signature, "devnet")}`);
