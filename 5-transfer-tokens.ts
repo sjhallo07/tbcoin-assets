@@ -12,8 +12,8 @@ const connection = new Connection(clusterApiUrl("devnet"));
 const sender = getKeypairFromEnvironment("SECRET_KEY"); // keypair: 2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY
 
 // REPLACE WITH YOUR ADDRESSES
-const tokenMintAccount = new PublicKey("2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY");
-const recipient = new PublicKey("RECIPIENT_PUBLIC_KEY_HERE");
+const tokenMintAccount = new PublicKey("4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
+const recipient = new PublicKey("6dCMwH4Wx4Sr1Q5TCGeV1ZMN8ihLcPpsP1wQ6Rka9Pgi");
 
 const sourceAccount = await getOrCreateAssociatedTokenAccount(
   connection,
@@ -22,9 +22,10 @@ const sourceAccount = await getOrCreateAssociatedTokenAccount(
   sender.publicKey
 );
 
+// Crear la cuenta asociada del destinatario si no existe
 const destAccount = await getOrCreateAssociatedTokenAccount(
   connection,
-  sender,
+  sender, // El payer paga el fee de creación
   tokenMintAccount,
   recipient
 );

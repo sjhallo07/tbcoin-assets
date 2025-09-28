@@ -12,13 +12,7 @@ const user = getKeypairFromEnvironment("SECRET_KEY"); // keypair: 2upvUrj31kyhmy
 console.log(`🔑 Loaded keypair: ${user.publicKey.toBase58()}`);
 
 // Create Token Mint for TB Coin
-const tokenMint = await createMint(
-  connection,
-  user,           // payer
-  user.publicKey, // mint authority
-  null,           // freeze authority (null to disable freeze)
-  8               // decimals (8 like others)
-);
+const tokenMint = new PublicKey("4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
 
 console.log(`✅ Token Mint created: ${tokenMint.toString()}`);
 console.log(`🔗 Explorer: ${getExplorerLink("address", tokenMint.toString(), "devnet")}`);
