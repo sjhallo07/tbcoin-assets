@@ -6,7 +6,12 @@ import {
 } from "@solana-developers/helpers";
 import { Connection, clusterApiUrl, PublicKey } from "@solana/web3.js";
 
-const connection = new Connection(clusterApiUrl("devnet"));
+// Permitir elegir red por argumento CLI
+const network = process.argv[2] || "devnet";
+if (!["devnet", "testnet", "mainnet-beta"].includes(network)) {
+  throw new Error("Invalid network. Use devnet, testnet, or mainnet-beta.");
+}
+const connection = new Connection(clusterApiUrl(network));
 const user = getKeypairFromEnvironment("SECRET_KEY"); // keypair: 2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY
 
 console.log(`🔑 Loaded keypair: ${user.publicKey.toBase58()}`);
@@ -21,7 +26,7 @@ async function main() {
     8               // decimals (8 like otros)
   );
   console.log(`✅ Token Mint created: ${tokenMint.toString()}`);
-  console.log(`🔗 Explorer: ${getExplorerLink("address", tokenMint.toString(), "devnet")}`);
+  console.log(`🔗 Explorer: ${getExplorerLink("address", tokenMint.toString(), network)}`);
 }
 
 main();

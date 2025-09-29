@@ -10,13 +10,19 @@ import {
   Transaction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import { createUpdateMetadataAccountV2Instruction } from "@metaplex-foundation/mpl-token-metadata";
+import { createCreateMetadataAccountV3Instruction } from "@metaplex-foundation/mpl-token-metadata";
 
 const user = getKeypairFromEnvironment("SECRET_KEY");
-const connection = new Connection(clusterApiUrl("devnet"));
+// Permitir elegir red por argumento CLI
+import type { Cluster } from "@solana/web3.js";
+const network = (process.argv[2] as Cluster) || "devnet";
+if (!["devnet", "testnet", "mainnet-beta"].includes(network)) {
+  throw new Error("Invalid network. Use devnet, testnet, or mainnet-beta.");
+}
+const connection = new Connection(clusterApiUrl(network));
 
 // REPLACE WITH YOUR TOKEN MINT ADDRESS
-const tokenMintAccount = new PublicKey("4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
+const tokenMintAccount = new PublicKey(process.argv[3] || "4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
 
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
@@ -25,11 +31,11 @@ const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
 const metadataData = {
   name: "TOKEN TB Coin",
   symbol: "TB",
-  uri: "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/metadata.json",
+  uri: "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/tbcoin_token_metadata.json",
   sellerFeeBasisPoints: 0,
   creators: null,
   collection: null,
-  uses: null,
+  uses: null
 };
 
 const [metadataPDA] = PublicKey.findProgramAddressSync(
@@ -42,21 +48,23 @@ const [metadataPDA] = PublicKey.findProgramAddressSync(
 );
 
 const transaction = new Transaction().add(
-  createUpdateMetadataAccountV2Instruction(
+  createCreateMetadataAccountV3Instruction(
     {
       metadata: metadataPDA,
+      mint: tokenMintAccount,
+      mintAuthority: user.publicKey,
+      payer: user.publicKey,
       updateAuthority: user.publicKey,
     },
     {
-      updateMetadataAccountArgsV2: {
+      createMetadataAccountArgsV3: {
         data: metadataData,
-        updateAuthority: user.publicKey,
-        primarySaleHappened: null,
         isMutable: true,
+        collectionDetails: null,
       }
     }
   )
 );
 
 const signature = await sendAndConfirmTransaction(connection, transaction, [user]);
-console.log(`✅ Metadata created: ${getExplorerLink("transaction", signature, "devnet")}`);
+console.log(`✅ Metadata created: ${getExplorerLink("transaction", signature, network as Cluster)}`);

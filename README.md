@@ -1,3 +1,22 @@
+## Solscan: Viewing Transactions and Balances
+
+### English
+You can view your real blockchain transactions and balances on Solscan for different Solana networks:
+
+- **Devnet:** https://solscan.io/?cluster=devnet
+- **Mainnet:** https://solscan.io/
+- **Testnet:** https://solscan.io/?cluster=testnet
+
+Just enter your wallet, mint, or token account address in the search bar. Only real blockchain operations (mint, transfer, create account) will appear. Automated API tests do not show up here.
+
+### Español
+Puedes ver tus transacciones y balances reales en Solscan para diferentes redes de Solana:
+
+- **Devnet:** https://solscan.io/?cluster=devnet
+- **Mainnet:** https://solscan.io/
+- **Testnet:** https://solscan.io/?cluster=testnet
+
+Solo ingresa la dirección pública de tu wallet, mint o cuenta de token en la barra de búsqueda. Solo las operaciones reales en la blockchain (minteo, transferencia, creación de cuenta) aparecerán. Las pruebas automatizadas de la API no se muestran aquí.
 
 # TB Coin Assets API
 

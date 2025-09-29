@@ -8,12 +8,18 @@ import {
 } from "@solana-developers/helpers";
 import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
 
-const connection = new Connection(clusterApiUrl("devnet"));
-const sender = getKeypairFromEnvironment("SECRET_KEY"); // keypair: 2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY
 
-// REPLACE WITH YOUR ADDRESSES
-const tokenMintAccount = new PublicKey("4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
-const recipient = new PublicKey("6dCMwH4Wx4Sr1Q5TCGeV1ZMN8ihLcPpsP1wQ6Rka9Pgi");
+// Permitir elegir red y direcciones por argumento CLI
+import type { Cluster } from "@solana/web3.js";
+const network = (process.argv[2] as Cluster) || "devnet";
+if (!["devnet", "testnet", "mainnet-beta"].includes(network)) {
+  throw new Error("Invalid network. Use devnet, testnet, or mainnet-beta.");
+}
+const connection = new Connection(clusterApiUrl(network));
+const sender = getKeypairFromEnvironment("SECRET_KEY");
+
+const tokenMintAccount = new PublicKey(process.argv[3] || "4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
+const recipient = new PublicKey(process.argv[4] || "6dCMwH4Wx4Sr1Q5TCGeV1ZMN8ihLcPpsP1wQ6Rka9Pgi");
 
 const sourceAccount = await getOrCreateAssociatedTokenAccount(
   connection,
@@ -40,4 +46,4 @@ const signature = await transfer(
   100 * 100 // 100 × 10^2
 );
 
-console.log(`✅ Transfer completed: ${getExplorerLink("transaction", signature, "devnet")}`);
+console.log(`✅ Transfer completed: ${getExplorerLink("transaction", signature, network)}`);

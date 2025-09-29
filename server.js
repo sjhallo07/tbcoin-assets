@@ -74,12 +74,18 @@ app.get('/api/balance/:address',
       return res.status(400).json({ error: errors.array()[0].msg });
     }
     const { address } = req.params;
+    // Permitir elegir red por query param
+    let network = req.query.network || 'mainnet-beta';
+    if (!['mainnet-beta', 'devnet', 'testnet'].includes(network)) {
+      return res.status(400).json({ error: 'Invalid network. Use mainnet-beta, devnet, or testnet.' });
+    }
     try {
-      const connection = new Connection('https://api.mainnet-beta.solana.com');
+      const { clusterApiUrl } = require('@solana/web3.js');
+      const connection = new Connection(clusterApiUrl(network));
       const publicKey = new PublicKey(address);
       const lamports = await connection.getBalance(publicKey);
       const sol = lamports / 1e9;
-      res.json({ address, balance: sol });
+      res.json({ address, balance: sol, network });
     } catch (err) {
       res.status(400).json({ error: 'No se pudo consultar el balance: ' + err.message });
     }
