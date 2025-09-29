@@ -11,7 +11,7 @@ const network = process.argv[2] || "devnet";
 if (!["devnet", "testnet", "mainnet-beta"].includes(network)) {
   throw new Error("Invalid network. Use devnet, testnet, or mainnet-beta.");
 }
-const connection = new Connection(clusterApiUrl(network));
+const connection = new Connection(clusterApiUrl(network as import("@solana/web3.js").Cluster));
 const user = getKeypairFromEnvironment("SECRET_KEY"); // keypair: 2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY
 
 console.log(`🔑 Loaded keypair: ${user.publicKey.toBase58()}`);
@@ -26,7 +26,7 @@ async function main() {
     8               // decimals (8 like otros)
   );
   console.log(`✅ Token Mint created: ${tokenMint.toString()}`);
-  console.log(`🔗 Explorer: ${getExplorerLink("address", tokenMint.toString(), network)}`);
+  console.log(`🔗 Explorer: ${getExplorerLink("address", tokenMint.toString(), network as import("@solana/web3.js").Cluster)}`);
 }
 
 main();
