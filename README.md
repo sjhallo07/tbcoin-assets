@@ -1,182 +1,123 @@
-# @solana/rpc-graphql
 
-This package defines a GraphQL client resolver built on top of the
-[Solana JSON-RPC](https://docs.solana.com/api/http).
+# TB Coin Assets API
 
-A client resolver in this context is simply a client-side RPC interface
-designed to give application developers the ability to use GraphQL to interact
-with data on the Solana blockchain.
+## English
 
-The resolver presents developers with a new schema for working with Solana data
-(see [Schema](#schema)), as well as new features only possible with GraphQL.
-Additionally, the resolver is designed to make highly-optimized use of the
-Solana JSON RPC, balancing RPC requests, batch loading, and caching
-(see [RPC Optimizations](#rpc-optimizations)).
+### Overview
+This project provides a REST API for interacting with Solana blockchain assets, including:
+- Querying balances for Solana addresses
+- Token minting, metadata, and transfers (via scripts)
+- Automated validation and security
+- API documentation with Swagger
 
-GraphQL is a query language for your API, and a server-side runtime for
-executing queries using a type system you define for your data.
+### Features
+- **GET /api/balance/:address**: Returns the SOL balance for any Solana address
+- **POST/GET /api/test**: Simple test endpoints for integration
+- **Swagger docs**: Available at `/api-docs` for interactive API documentation
+- **Validation**: All inputs are validated using express-validator
+- **Security**: Private keys are never exposed; only used in local scripts
+- **Blockchain integration**: Uses @solana/web3.js for real-time blockchain queries
+- **Scalability**: Database recommendations included (MongoDB, PostgreSQL, SQLite)
+- **Authentication**: JWT example ready for user/session protection
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/GraphQL_Logo.svg/1024px-GraphQL_Logo.svg.png?20161105194737" alt="graphql-icon" width="24" align="center"/> [**GraphQL**](https://graphql.org/learn/)
+### Setup
+1. Install dependencies:
+   ```sh
+   npm install
+   ```
+2. Start the server:
+   ```sh
+   node server.js
+   ```
+3. Access Swagger docs at [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
 
-# Quick Start
-
-The RPC-GraphQL client requires an RPC client, as defined by the package
-`@solana/rpc-spec`. Such a client is available in `@solana/kit:2.0` or
-can be created manually with a custom implementation.
-
-```ts
-Rpc<TRpcMethods>;
+### Example Usage
+**Query balance:**
+```sh
+curl http://localhost:3000/api/balance/YourSolanaAddress
 ```
 
-The RPC-GraphQL requires an RPC client with the following API methods available
-for use in order to properly execute all queries.
+### Security
+- All sensitive keys are stored in `.env` and never exposed in endpoints
+- Input validation prevents malformed requests
+- For HTTPS, deploy on Heroku, Vercel, or use Nginx locally
 
-```ts
-Rpc<GetAccountInfoApi & GetBlockApi & GetMultipleAccountsApi & GetProgramAccountsApi & GetTransactionApi>;
+### Blockchain Integration
+- Uses @solana/web3.js for all blockchain operations
+- Scripts for minting, metadata, and transfers included
+
+### Documentation
+- Interactive API docs: `/api-docs`
+- Example requests in this README
+
+### Scalability
+- Recommended databases: MongoDB, PostgreSQL, SQLite (see `DATABASE.md`)
+- JWT authentication ready for user/session protection
+
+---
+
+## Español
+
+### Descripción
+Este proyecto provee una API REST para interactuar con activos en la blockchain Solana, incluyendo:
+- Consulta de balances para direcciones de Solana
+- Scripts para minteo, metadatos y transferencias de tokens
+- Validación y seguridad automatizada
+- Documentación interactiva con Swagger
+
+### Funcionalidades
+- **GET /api/balance/:address**: Devuelve el balance SOL de cualquier dirección de Solana
+- **POST/GET /api/test**: Endpoints de prueba para integración
+- **Swagger docs**: Disponible en `/api-docs` para documentación interactiva
+- **Validación**: Todos los datos recibidos se validan con express-validator
+- **Seguridad**: Las claves privadas nunca se exponen; solo se usan en scripts locales
+- **Integración blockchain**: Usa @solana/web3.js para consultas en tiempo real
+- **Escalabilidad**: Recomendaciones de base de datos incluidas (MongoDB, PostgreSQL, SQLite)
+- **Autenticación**: Ejemplo de JWT listo para protección de usuarios/sesiones
+
+### Instalación
+1. Instala las dependencias:
+   ```sh
+   npm install
+   ```
+2. Inicia el servidor:
+   ```sh
+   node server.js
+   ```
+3. Accede a la documentación Swagger en [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+
+### Ejemplo de uso
+**Consultar balance:**
+```sh
+curl http://localhost:3000/api/balance/TuDireccionSolana
 ```
 
-To initialize the RPC-GraphQL client, simple use `createSolanaRpcGraphQL`.
+### Seguridad
+- Todas las claves sensibles se guardan en `.env` y nunca se exponen en endpoints
+- La validación de datos previene solicitudes malformadas
+- Para HTTPS, despliega en Heroku, Vercel o usa Nginx localmente
 
-```ts
-import { createSolanaRpc } from '@solana/rpc';
+### Integración Blockchain
+- Usa @solana/web3.js para todas las operaciones blockchain
+- Incluye scripts para minteo, metadatos y transferencias
 
-// Create the RPC client
-const rpc = createSolanaRpc('https://api.devnet.solana.com');
+### Documentación
+- Documentación interactiva: `/api-docs`
+- Ejemplos de uso en este README
 
-// Create the RPC-GraphQL client
-const rpcGraphQL = createSolanaRpcGraphQL(rpc);
-```
+### Escalabilidad
+- Bases de datos recomendadas: MongoDB, PostgreSQL, SQLite (ver `DATABASE.md`)
+- Autenticación JWT lista para protección de usuarios/sesiones
 
-The `RpcGraphQL` type supports one method `query` which accepts a string
-query source and an optional `variableValues` parameter - which is an object
-containing any variables to pipe into the query string.
+---
 
-You can define queries with hard-coded parameters.
+### Authors / Autores
+- sjhallo07
+- Marcos Mora
 
-```ts
-const source = `
-    query myQuery {
-        account(address: "AyGCwnwxQMCqaU4ixReHt8h5W4dwmxU7eM3BEQBdWVca") {
-            lamports
-        }
-    }
-`;
+---
 
-const result = await rpcGraphQL.query(source);
-```
-
-```
-data: {
-    account: {
-        lamports: 10290815n,
-    },
-}
-```
-
-You can also pass the variable values.
-
-```ts
-const source = `
-    query myQuery($address: String!) {
-        account(address: $address) {
-            lamports
-        }
-    }
-`;
-
-const variableValues = {
-    address: 'AyGCwnwxQMCqaU4ixReHt8h5W4dwmxU7eM3BEQBdWVca',
-};
-
-const result = await rpcGraphQL.query(source, variableValues);
-```
-
-```
-data: {
-    account: {
-        lamports: 10290815n,
-    },
-}
-```
-
-Queries with variable values can also be re-used!
-
-```ts
-const source = `
-    query myQuery($address: String!) {
-        account(address: $address) {
-            lamports
-        }
-    }
-`;
-
-const lamportsAccountA = await rpcGraphQL.query(source, {
-    address: 'AyGCwnwxQMCqaU4ixReHt8h5W4dwmxU7eM3BEQBdWVca',
-});
-
-const lamportsAccountB = await rpcGraphQL.query(source, {
-    address: 'CcYNb7WqpjaMrNr7B1mapaNfWctZRH7LyAjWRLBGt1Fk',
-});
-```
-
-# Schema
-
-Solana data can be categorized into three main types:
-
-- Accounts
-- Transactions
-- Blocks
-
-These types encompass everything that can be queried from the Solana ledger.
-
-## Accounts
-
-The `Account` interface contains common fields across all accounts.
-
-```graphql
-interface Account {
-    address: Address
-    data(encoding: AccountEncoding!, dataSlice: DataSlice): String
-    executable: Boolean
-    lamports: BigInt
-    ownerProgram: Account
-    space: BigInt
-}
-```
-
-Any account can be queried by these fields without specifying the specific
-account type.
-
-```ts
-const source = `
-    query myQuery($address: String!) {
-        account(address: $address) {
-            executable
-            lamports
-        }
-    }
-`;
-
-const variableValues = {
-    address: 'AyGCwnwxQMCqaU4ixReHt8h5W4dwmxU7eM3BEQBdWVca',
-};
-
-const result = await rpcGraphQL.query(source, variableValues);
-```
-
-```
-data: {
-    account: {
-        executable: false,
-        lamports: 10290815n,
-    },
-}
-```
-
-### Querying Account Data
-
-Querying accounts by their encoded data (`base58`, `base64`, `base64+zstd`) is
-still fully supported.
+For more details, see the code comments and Swagger docs. / Para más detalles, revisa los comentarios en el código y la documentación Swagger.
 
 ```ts
 const source = `

@@ -10,7 +10,7 @@ import {
   Transaction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import { createCreateMetadataAccountV3Instruction } from "@metaplex-foundation/mpl-token-metadata";
+import { createUpdateMetadataAccountV2Instruction } from "@metaplex-foundation/mpl-token-metadata";
 
 const user = getKeypairFromEnvironment("SECRET_KEY");
 const connection = new Connection(clusterApiUrl("devnet"));
@@ -23,7 +23,7 @@ const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
 );
 
 const metadataData = {
-  name: "TB Coin",
+  name: "TOKEN TB Coin",
   symbol: "TB",
   uri: "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/metadata.json",
   sellerFeeBasisPoints: 0,
@@ -42,20 +42,18 @@ const [metadataPDA] = PublicKey.findProgramAddressSync(
 );
 
 const transaction = new Transaction().add(
-  createCreateMetadataAccountV3Instruction(
+  createUpdateMetadataAccountV2Instruction(
     {
       metadata: metadataPDA,
-      mint: tokenMintAccount,
-      mintAuthority: user.publicKey,
-      payer: user.publicKey,
       updateAuthority: user.publicKey,
     },
     {
-      createMetadataAccountArgsV3: {
-        collectionDetails: null,
+      updateMetadataAccountArgsV2: {
         data: metadataData,
+        updateAuthority: user.publicKey,
+        primarySaleHappened: null,
         isMutable: true,
-      },
+      }
     }
   )
 );
