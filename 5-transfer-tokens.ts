@@ -10,12 +10,19 @@ import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
 
 
 // Permitir elegir red y direcciones por argumento CLI
+// Permitir elegir red por argumento CLI o endpoint personalizado
 import type { Cluster } from "@solana/web3.js";
-const network = (process.argv[2] as Cluster) || "devnet";
-if (!["devnet", "testnet", "mainnet-beta"].includes(network)) {
-  throw new Error("Invalid network. Use devnet, testnet, or mainnet-beta.");
+const networkOrEndpoint = process.argv[2] || "devnet";
+let connection: Connection;
+if (["devnet", "testnet", "mainnet-beta"].includes(networkOrEndpoint)) {
+  connection = new Connection(clusterApiUrl(networkOrEndpoint as Cluster));
+} else {
+  // Si el argumento no es una red conocida, se asume que es un endpoint RPC personalizado
+  connection = new Connection(networkOrEndpoint);
 }
-const connection = new Connection(clusterApiUrl(network));
+const network = ["devnet", "testnet", "mainnet-beta"].includes(networkOrEndpoint)
+  ? networkOrEndpoint
+  : undefined;
 const sender = getKeypairFromEnvironment("SECRET_KEY");
 
 const tokenMintAccount = new PublicKey(process.argv[3] || "4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
@@ -46,4 +53,4 @@ const signature = await transfer(
   100 * 100 // 100 × 10^2
 );
 
-console.log(`✅ Transfer completed: ${getExplorerLink("transaction", signature, network)}`);
+console.log(`✅ Tokens transferred: ${getExplorerLink("transaction", signature, ["devnet", "testnet", "mainnet-beta"].includes(networkOrEndpoint) ? networkOrEndpoint as Cluster : undefined)}`);
