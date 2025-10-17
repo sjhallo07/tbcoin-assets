@@ -238,6 +238,22 @@ Quadratic Voting · Delegated Voting · Thresholds · Transparency
 - Metaverse Land Ownership  
 - ZK Proofs, Quantum Security, IoT Payments, Green Mining
 
+
+
+---
+
+## 🌐 Futura Implementación / Future Implementation: Microservicios Serverless con IBM Cloud Engine y Docker
+
+**Español:**  
+Como parte de la evolución de TB Coin, se migrarán servicios clave del backend a un modelo de microservicios serverless utilizando IBM Cloud Engine y contenedores Docker. Esto permitirá una escalabilidad superior, despliegues automatizados, monitoreo avanzado y reducción de costos operativos. La nueva arquitectura facilitará la interoperabilidad entre módulos (oráculos, notificaciones, gestión de staking, APIs) y garantizará alta disponibilidad para toda la comunidad TB Coin.
+
+**English:**  
+As part of TB Coin’s evolution, key backend services will be migrated to a serverless microservices model using IBM Cloud Engine and Docker containers. This will enable superior scalability, automated deployments, advanced monitoring, and reduced operational costs. The new architecture will improve interoperability between modules (oracles, notifications, staking management, APIs) and guarantee high availability for the entire TB Coin community.
+
+---
+
+¿
+
 ---
 
 ## 🤝 Contributing / Contribuciones
