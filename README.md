@@ -1,9 +1,7 @@
 
 ---
+https://github.com/sjhallo07/tbcoin-assets/blob/main/social-preview.png
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/sjhallo07/tb-coin/main/logo.png" alt="TB Coin Logo" width="120"/>
-</p>
 
 # TB Coin Assets
 
