@@ -1,0 +1,17 @@
+[workspace]
+members = [
+  "programs/tbcoin"
+]
+
+[programs.localnet]
+tbcoin = "tbCoiNq1tFZzxfbE7yVZM6P8Rsm1LkNgnE5Z5yJ6Fzq"
+
+[programs.devnet]
+tbcoin = "tbCoiNq1tFZzxfbE7yVZM6P8Rsm1LkNgnE5Z5yJ6Fzq"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "anchor test"

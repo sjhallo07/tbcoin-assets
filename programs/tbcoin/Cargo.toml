@@ -1,0 +1,18 @@
+[package]
+name = "tbcoin"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "tbcoin"
+
+[features]
+default = ["idl"]
+idl = []
+no-entrypoint = []
+
+[dependencies]
+anchor-lang = "0.30.1"
+anchor-spl = "0.30.1"
+mpl-token-metadata = { version = "4.1.2", features = ["no-entrypoint"] }

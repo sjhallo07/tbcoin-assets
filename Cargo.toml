@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "programs/tbcoin"
+]
+resolver = "2"
