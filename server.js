@@ -118,6 +118,166 @@ const swaggerDocument = {
           }
         }
       }
+    },
+    '/api/v1/blockchain/transactions': {
+      get: {
+        summary: 'Get transaction data for analysis',
+        parameters: [
+          {
+            name: 'wallet_address',
+            in: 'query',
+            required: false,
+            schema: { type: 'string' },
+            description: 'Wallet address to filter transactions'
+          },
+          {
+            name: 'start_time',
+            in: 'query',
+            required: false,
+            schema: { type: 'integer' },
+            description: 'Start time (Unix timestamp)'
+          },
+          {
+            name: 'end_time',
+            in: 'query',
+            required: false,
+            schema: { type: 'integer' },
+            description: 'End time (Unix timestamp)'
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            required: false,
+            schema: { type: 'integer', default: 1000, maximum: 10000 },
+            description: 'Number of transactions to return'
+          },
+          {
+            name: 'offset',
+            in: 'query',
+            required: false,
+            schema: { type: 'integer', default: 0 },
+            description: 'Offset for pagination'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Transaction data retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string' },
+                    data: { type: 'array' },
+                    count: { type: 'integer' }
+                  }
+                }
+              }
+            }
+          },
+          500: {
+            description: 'Internal server error'
+          }
+        }
+      }
+    },
+    '/api/v1/blockchain/wallet/{wallet_address}/behavior': {
+      get: {
+        summary: 'Get wallet behavior analysis',
+        parameters: [
+          {
+            name: 'wallet_address',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Wallet address to analyze'
+          }
+        ],
+        responses: {
+          200: {
+            description: 'Wallet behavior analysis retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string' },
+                    wallet_address: { type: 'string' },
+                    behavior_metrics: { type: 'object' }
+                  }
+                }
+              }
+            }
+          },
+          500: {
+            description: 'Internal server error'
+          }
+        }
+      }
+    },
+    '/api/v1/blockchain/predict': {
+      post: {
+        summary: 'Make prediction using trained ML models',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  features: { type: 'object', description: 'Feature data for prediction' },
+                  model_type: { type: 'string', default: 'price_movement', description: 'Type of model to use' }
+                },
+                required: ['features']
+              }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'Prediction made successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string' },
+                    prediction: { type: 'object' },
+                    model_used: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          500: {
+            description: 'Prediction failed'
+          }
+        }
+      }
+    },
+    '/api/v1/blockchain/model/metrics': {
+      get: {
+        summary: 'Get current model performance metrics',
+        responses: {
+          200: {
+            description: 'Model metrics retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string' },
+                    metrics: { type: 'object' }
+                  }
+                }
+              }
+            }
+          },
+          500: {
+            description: 'Internal server error'
+          }
+        }
+      }
     }
   }
 };
@@ -169,6 +329,122 @@ app.post('/api/transfer', async (req, res) => {
     status: 'simulated',
     message: 'Transferencia simulada correctamente'
   });
+});
+
+// Blockchain data endpoints
+app.get('/api/v1/blockchain/transactions', async (req, res) => {
+  try {
+    const { wallet_address, start_time, end_time, limit = 1000, offset = 0 } = req.query;
+    
+    // Validate limit
+    const parsedLimit = Math.min(parseInt(limit) || 1000, 10000);
+    const parsedOffset = parseInt(offset) || 0;
+    
+    // Mock transaction data for demonstration
+    const transactions = [];
+    for (let i = 0; i < Math.min(10, parsedLimit); i++) {
+      transactions.push({
+        signature: `mock_signature_${i + parsedOffset}`,
+        block_time: Date.now() / 1000 - i * 3600,
+        slot: 100000 + i,
+        fee: 5000,
+        status: 'confirmed',
+        wallet_address: wallet_address || 'mock_wallet_address'
+      });
+    }
+    
+    res.json({
+      status: 'success',
+      data: transactions,
+      count: transactions.length
+    });
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/v1/blockchain/wallet/:wallet_address/behavior', async (req, res) => {
+  try {
+    const { wallet_address } = req.params;
+    
+    // Validate wallet address
+    const solanaRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    if (!solanaRegex.test(wallet_address)) {
+      return res.status(400).json({ error: 'Invalid wallet address' });
+    }
+    
+    // Mock behavior analysis data
+    const behavior_data = {
+      transaction_count: 150,
+      avg_transaction_size: 0.5,
+      total_volume: 75.0,
+      active_days: 45,
+      first_seen: Date.now() / 1000 - 90 * 24 * 3600,
+      last_seen: Date.now() / 1000 - 3600,
+      risk_score: 0.15,
+      behavior_pattern: 'regular_trader'
+    };
+    
+    res.json({
+      status: 'success',
+      wallet_address: wallet_address,
+      behavior_metrics: behavior_data
+    });
+  } catch (error) {
+    console.error('Error analyzing wallet behavior:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/v1/blockchain/predict', async (req, res) => {
+  try {
+    const { features, model_type = 'price_movement' } = req.body;
+    
+    if (!features || typeof features !== 'object') {
+      return res.status(400).json({ error: 'Features object is required' });
+    }
+    
+    // Mock prediction data
+    const prediction = {
+      predicted_value: 0.85,
+      confidence: 0.92,
+      timestamp: Date.now() / 1000,
+      model_version: '1.0.0'
+    };
+    
+    res.json({
+      status: 'success',
+      prediction: prediction,
+      model_used: model_type
+    });
+  } catch (error) {
+    console.error('Prediction error:', error);
+    res.status(500).json({ error: 'Prediction failed' });
+  }
+});
+
+app.get('/api/v1/blockchain/model/metrics', async (req, res) => {
+  try {
+    // Mock model metrics
+    const metrics = {
+      accuracy: 0.87,
+      precision: 0.85,
+      recall: 0.89,
+      f1_score: 0.87,
+      last_updated: Date.now() / 1000,
+      model_version: '1.0.0',
+      training_samples: 10000
+    };
+    
+    res.json({
+      status: 'success',
+      metrics: metrics
+    });
+  } catch (error) {
+    console.error('Error fetching model metrics:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Swagger UI
