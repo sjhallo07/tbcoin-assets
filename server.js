@@ -5,6 +5,10 @@ const swaggerUi = require('swagger-ui-express');
 const app = express();
 app.use(express.json()); // Asegura que el body se parsea como JSON
 
+// Constants
+const SOLANA_ADDRESS_REGEX = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const MOCK_TRANSACTION_LIMIT = 10;
+
 // Documentación Swagger básica
 const swaggerDocument = {
   openapi: '3.0.0',
@@ -304,14 +308,13 @@ app.get('/api/balance/:address', async (req, res) => {
 // Endpoint transferencia simulada
 app.post('/api/transfer', async (req, res) => {
   const { from, to, amount, network } = req.body;
-  const solanaRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
   if (!from || !to || !amount) {
     return res.status(400).json({ error: 'from, to y amount son requeridos' });
   }
-  if (!solanaRegex.test(from)) {
+  if (!SOLANA_ADDRESS_REGEX.test(from)) {
     return res.status(400).json({ error: 'Dirección "from" inválida' });
   }
-  if (!solanaRegex.test(to)) {
+  if (!SOLANA_ADDRESS_REGEX.test(to)) {
     return res.status(400).json({ error: 'Dirección "to" inválida' });
   }
   if (typeof amount !== 'number' || amount <= 0) {
@@ -342,7 +345,7 @@ app.get('/api/v1/blockchain/transactions', async (req, res) => {
     
     // Mock transaction data for demonstration
     const transactions = [];
-    for (let i = 0; i < Math.min(10, parsedLimit); i++) {
+    for (let i = 0; i < Math.min(MOCK_TRANSACTION_LIMIT, parsedLimit); i++) {
       transactions.push({
         signature: `mock_signature_${i + parsedOffset}`,
         block_time: Date.now() / 1000 - i * 3600,
@@ -369,8 +372,7 @@ app.get('/api/v1/blockchain/wallet/:wallet_address/behavior', async (req, res) =
     const { wallet_address } = req.params;
     
     // Validate wallet address
-    const solanaRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-    if (!solanaRegex.test(wallet_address)) {
+    if (!SOLANA_ADDRESS_REGEX.test(wallet_address)) {
       return res.status(400).json({ error: 'Invalid wallet address' });
     }
     
@@ -401,7 +403,7 @@ app.post('/api/v1/blockchain/predict', async (req, res) => {
   try {
     const { features, model_type = 'price_movement' } = req.body;
     
-    if (!features || typeof features !== 'object') {
+    if (!features || typeof features !== 'object' || Array.isArray(features) || features === null) {
       return res.status(400).json({ error: 'Features object is required' });
     }
     

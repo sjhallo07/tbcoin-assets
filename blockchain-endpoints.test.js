@@ -96,6 +96,22 @@ describe('Blockchain Data API Endpoints', () => {
       expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
     });
+
+    it('should return error if features is an array', async () => {
+      const response = await request(app)
+        .post('/api/v1/blockchain/predict')
+        .send({ features: [1, 2, 3] });
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
+    });
+
+    it('should return error if features is null', async () => {
+      const response = await request(app)
+        .post('/api/v1/blockchain/predict')
+        .send({ features: null });
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
+    });
   });
 
   describe('GET /api/v1/blockchain/model/metrics', () => {
