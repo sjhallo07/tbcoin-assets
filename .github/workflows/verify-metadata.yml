@@ -1,0 +1,39 @@
+name: Verify On-Chain Metadata
+
+on:
+  push:
+    paths:
+      - 'pretty-print-metadata.js'
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Solana network (devnet/testnet/mainnet-beta)'
+        required: false
+        default: 'devnet'
+      mint:
+        description: 'Token mint address to verify'
+        required: true
+        default: '8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run pretty-print metadata
+        env:
+          NETWORK: ${{ github.event.inputs.network || 'devnet' }}
+          MINT: ${{ github.event.inputs.mint || '8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6' }}
+        run: |
+          echo "Running pretty-print for network=$NETWORK mint=$MINT"
+          node pretty-print-metadata.js "$NETWORK" "$MINT"
