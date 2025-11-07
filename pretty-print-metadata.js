@@ -45,8 +45,10 @@ async function main() {
   // Try to fetch the off-chain JSON if URI is HTTP or ipfs via gateway
   if (uri.startsWith('http')) {
     try {
-      const fetch = require('node-fetch');
-      const res = await fetch(uri, { timeout: 10000 });
+      // Use global fetch available in Node 18+ (GitHub Actions uses Node 18)
+      const fetchImpl = globalThis.fetch;
+      if (typeof fetchImpl !== 'function') throw new Error('global fetch is not available in this runtime');
+      const res = await fetchImpl(uri, { timeout: 10000 });
       if (res.ok) {
         const j = await res.json();
         console.log('\nOff-chain JSON contents:');
