@@ -1,69 +1,140 @@
+﻿# TB Coin Assets
 
----
-https://github.com/sjhallo07/tbcoin-assets/blob/main/social-preview.png
-
-
-# TB Coin Assets
+The TB Coin assets repository contains the on-chain mint scripts, off-chain metadata, web assets, and automation used to manage the TB Coin SPL token on Solana devnet. Everything required to recreate the mint, publish metadata, verify updates, and expose basic API endpoints lives here.
 
 ---
 
-## 🚀 Overview / Resumen
+## Quick Facts
 
-**EN:**  
-TB Coin is not just another meme token—it's a smart utility token built on Solana with advanced features, server integration, and real-world use cases. TB Coin combines the viral nature of meme coins with sophisticated blockchain technology.
+- **Mint (devnet):** `8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6`
+- **Metadata PDA:** `GvyJwr4N11A32DAx2ZQ2Y1oTNskPka5FgMEadDsVaVB`
+- **Update authority:** `2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY`
+- **Metadata JSON:** `https://sjhallo07.github.io/tbcoin-assets/tbcoin_token_metadata.json`
+- **Token image (PNG):** `https://sjhallo07.github.io/tbcoin-assets/tbcoin_logo.png`
 
-**ES:**  
-TB Coin no es solo otro meme token, sino un token inteligente con utilidad real, construido en Solana, con características avanzadas, integración de servidores y casos de uso reales. TB Coin combina lo viral de los meme coins con tecnología blockchain avanzada.
-
----
-
-## 💡 Vision / Visión
-
-**EN:**  
-Transform the meme coin space by introducing utility, governance, and sustainable economics while keeping the fun and community-driven spirit.
-
-**ES:**  
-Transformar el espacio de los meme tokens incorporando utilidad, gobernanza y economía sostenible, manteniendo la diversión y el espíritu comunitario.
+These identifiers are referenced throughout the scripts, workflows, and verification tooling. Update them together if you deploy to a different cluster or rotate authorities.
 
 ---
 
-## 🛠️ Technical Architecture / Arquitectura Técnica
+## Repository Structure
 
-Solana Blockchain  
-SPL Token · Smart Programs (Rust) · DAO Governance · Phantom Wallet · Node.js Backend · Community Voting
+| Path | Purpose |
+| ---- | ------- |
+| `.github/workflows/node.js.yml` | CI workflow that installs dependencies and conditionally runs lint/build/test steps.
+| `.github/workflows/verify-metadata.yml` | Automation that re-runs `verify-metadata.js` when metadata artifacts change or on schedule.
+| `2-create-token-metadata.ts` | Creates metadata account for an existing mint using Metaplex `CreateMetadataAccountV3`.
+| `3-create-token-account.ts` | Creates an associated token account (ATA) for a wallet.
+| `4-mint-tokens.ts` | Mints tokens into an ATA.
+| `5-transfer-tokens.ts` | Transfers tokens between ATAs, creating them if missing.
+| `create-token-mint.ts` | Creates a new mint with configurable network/endpoint.
+| `generate-solana-wallet.js` | Generates a new Solana keypair and writes it to disk.
+| `generate-keypair.js` / `generate-test-wallet.js` | Helper scripts for local testing wallets.
+| `get-balance.js` / `get-balance-testnet.js` | Read SOL balances via JSON RPC.
+| `metadata.json` | Local working copy of metadata used when iterating.
+| `tbcoin_token_metadata.json` | Published JSON served by GitHub Pages and referenced by the mint.
+| `tbcoin_logo.png` | Token logo consumed by wallets, explorers, and metadata JSON.
+| `verify-metadata.js` | Canonical metadata verification script (on-chain + off-chain checks).
+| `pretty-print-metadata.js` | Low-level PDA reader for debugging raw metadata bytes.
+| `server.js` | Express API exposing balance lookup and a simulated transfer endpoint.
+| `balance.test.js` | Jest test that exercises the balance endpoint.
+
+---
+
+## Prerequisites
+
+- Node.js 18 or later (the workflows test 18.x, 20.x, 22.x).
+- `npm` (ships with Node).
+- Solana CLI (recommended) or a custom RPC endpoint if you need rate limits beyond the public cluster URLs.
+- A funded Solana wallet secret key for the network you target.
+
+---
+
+## Installation & Environment
+
+```powershell
+git clone https://github.com/sjhallo07/tbcoin-assets.git
+cd tbcoin-assets
+npm install
+
+Copy `.env` from the example below, insert your 64-byte secret key array, and adjust optional overrides:
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   TB Token      │    │   Smart Programs │    │   Governance    │
-│   (SPL Token)   │◄──►│   (Rust)        │◄──►│   DAO           │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Phantom       │    │   Backend Server │    │   Community     │
-│   Integration   │    │   (Node.js)      │    │   Voting        │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+SECRET_KEY=[1,2,3,...,64 bytes]
+NETWORK=devnet
+GH_PAGES_URL=https://sjhallo07.github.io/tbcoin-assets
+METADATA_JSON_PATH=tbcoin_token_metadata.json
+MINT_ADDRESS=8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6
+METADATA_PDA=GvyJwr4N11A32DAx2ZQ2Y1oTNskPka5FgMEadDsVaVB
+TOKEN_NAME="TOKEN TB Coin"
+TOKEN_SYMBOL=TB
 ```
+
+The `.env` is ignored by git. Never commit secrets.
 
 ---
 
-## 🌟 Unique Features / Características Únicas
+## Core Token Workflow
 
-**EN:**  
-- Multi-tier Tokenomics & Reflection  
-- Auto-staking rewards  
-- Community Governance (DAO)  
-- Cross-chain Bridge Ready  
-- NFT Integration  
-- AI-Powered Analytics  
-- Gamified Staking  
-- Real-time Notifications
+The TypeScript scripts rely on `ts-node`. Use `npx ts-node` (or `npx esrun`) to execute them.
 
-**ES:**  
-- Tokenomics multinivel y reflexión  
-- Recompensas automáticas por staking  
-- Gobernanza comunitaria (DAO)  
-- Arquitectura lista para puentes entre cadenas  
+1. **Generate a wallet (optional)**
+  ```powershell
+  node generate-solana-wallet.js
+  ```
+  Store the secret key array in `.env` under `SECRET_KEY`.
+
+2. **Create the mint**
+  ```powershell
+  npx ts-node create-token-mint.ts devnet
+  ```
+  Outputs the new mint address and explorer link. Update `MINT_ADDRESS` in `.env`.
+
+3. **Create metadata account**
+  ```powershell
+  npx ts-node 2-create-token-metadata.ts devnet <mint-address>
+  ```
+  Uses the Metaplex `CreateMetadataAccountV3` instruction generated by `@metaplex-foundation/mpl-token-metadata`.
+
+4. **Create an associated token account**
+  ```powershell
+  npx ts-node 3-create-token-account.ts devnet <mint> <ownerPubkey>
+  ```
+  Builds the ATA for either the mint authority or recipient.
+
+5. **Mint tokens into an ATA**
+  ```powershell
+  npx ts-node 4-mint-tokens.ts devnet <mint> <recipientPubkey> <amount>
+  ```
+  Amount is expressed in whole tokens (script multiplies by decimals internally).
+
+6. **Transfer tokens**
+  ```powershell
+  npx ts-node 5-transfer-tokens.ts devnet <mint> <recipientPubkey> <amount>
+  ```
+  Automatically creates the recipient ATA if missing.
+
+7. **Update metadata URI/name/symbol (optional)**
+  ```powershell
+  node update-metadata.js devnet <mint> tbcoin_token_metadata.json
+  ```
+  Submits an update instruction signed by the update authority.
+
+8. **Inspect metadata via PDA**
+  ```powershell
+  node pretty-print-metadata.js devnet <mint>
+  node verify-metadata.js devnet <mint> "Expected Name" "Expected Symbol" "https://.../metadata.json"
+  ```
+  The verification script fetches the off-chain JSON and confirms the image URL matches.
+
+---
+
+## Metadata Assets
+
+- `tbcoin_token_metadata.json` is the authoritative JSON served to wallets. Update the `image` field when you upload a new logo.
+- `metadata.json` is a local helper copy used when iterating on metadata before pushing to GitHub Pages.
+- `tbcoin_logo.png` is the PNG referenced by the metadata JSON.
+
+Publish updates by committing the JSON/image changes and pushing to the `main` branch. GitHub Pages automatically serves the new files at `https://sjhallo07.github.io/tbcoin-assets/` after deployment (usually within a minute).
 - Integración NFT  
 - Analítica basada en IA  
 - Staking gamificado  
@@ -71,17 +142,26 @@ SPL Token · Smart Programs (Rust) · DAO Governance · Phantom Wallet · Node.j
 
 ---
 
-## 📊 Tokenomics
 
-```typescript
+---
+
+## 🚀 Implementation Roadmap / Hoja de Ruta
+
+**EN:**  
+- Phase 1: SPL Token, Metadata, Phantom Integration, SolScan  
+- Phase 3: AI Analysis, Mobile App, Cross-chain, NFT Launch  
+- Phase 4: DeFi Partnerships, Merchant Adoption, Gaming, Full DAO
+
+**ES:**  
+- Fase 1: Token SPL, Metadatos, Integración Phantom, SolScan  
+
+---
+
 const tokenomics = {
   totalSupply: "1,000,000,000 TB",
   distribution: {
     liquidity: "40%",
     communityRewards: "25%",
-    teamAndDevelopment: "15%",
-    marketingAndGrowth: "10%",
-    ecosystemFund: "10%"
   },
   features: {
     autoBurn: "1% of every transaction",
@@ -90,48 +170,16 @@ const tokenomics = {
   }
 };
 ```
-
----
-
-## 🚀 Implementation Roadmap / Hoja de Ruta
-
-**EN:**  
-- Phase 1: SPL Token, Metadata, Phantom Integration, SolScan  
-- Phase 2: Backend, Price Tracking, Liquidity Management, Governance  
-- Phase 3: AI Analysis, Mobile App, Cross-chain, NFT Launch  
-- Phase 4: DeFi Partnerships, Merchant Adoption, Gaming, Full DAO
-
-**ES:**  
-- Fase 1: Token SPL, Metadatos, Integración Phantom, SolScan  
-- Fase 2: Backend, Seguimiento de precios, Liquidez, Gobernanza  
-- Fase 3: Análisis IA, App móvil, Bridge, Lanzamiento NFT  
-- Fase 4: DeFi, Comercios, Gaming, DAO completo
-
----
-
-## 🖥️ Server Architecture / Arquitectura del Servidor
-
-**EN:**  
-- Price Oracle, Transaction Monitor, Notification Engine, API Gateway  
+```
 - MongoDB & Redis
 
 **ES:**  
-- Oráculo de precios, Monitor de transacciones, Motor de notificaciones, Gateway API  
 - MongoDB y Redis
 
-Endpoints:
-
 ```typescript
-GET  /api/v1/price                  // Current token price
-POST /api/v1/stake                  // Staking operations
-GET  /api/v1/holders                // Holder statistics
-POST /api/v1/vote                   // Governance voting
-WS   /ws/price                      // Real-time price updates
-```
 
 ---
 
-## 🔧 Development Setup / Configuración de Desarrollo
 
 **EN:**  
 - Node.js 18+  
@@ -146,16 +194,7 @@ WS   /ws/price                      // Real-time price updates
 - Docker
 
 Instalación:
-
-```bash
-git clone https://github.com/your-username/tb-coin.git
-cd tb-coin
-npm install
-cp .env.example .env
-npm run dev:server
-npm run deploy:devnet
 ```
-
 ---
 
 ## 📱 Frontend Integration / Integración Frontend

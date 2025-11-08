@@ -7,5 +7,12 @@ node_modules/
 # Ignore log files
 *.log
 
+# Ignore build artifacts
+dist/
+
+# Ignore runtime storage directories
+storage/
+storage-test/
+
 # Ignore generated keypair script (optional)
 generate-keypair.js

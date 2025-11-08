@@ -2,11 +2,12 @@
 import 'dotenv/config';
 import {
   getAssociatedTokenAddress,
-  getAccount,
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
+  getAccount,
+  getMint,
   TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID
 } from "@solana/spl-token";
 import {
   getExplorerLink,
@@ -20,6 +21,7 @@ import {
   Transaction,
   sendAndConfirmTransaction
 } from "@solana/web3.js";
+import BigNumber from "bignumber.js";
 
 // Crea la ATA si no existe
 async function getOrCreateAta(
@@ -61,16 +63,49 @@ async function main() {
   // Keypair del emisor desde variable de entorno SECRET_KEY
   const sender = getKeypairFromEnvironment("SECRET_KEY");
 
-  // Mint y destinatario desde argumentos o valores por defecto
-  const tokenMintAccount = new PublicKey(process.argv[2] || "4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
-  const recipient = new PublicKey(process.argv[3] || "6dCMwH4Wx4Sr1Q5TCGeV1ZMN8ihLcPpsP1wQ6Rka9Pgi");
+  // Usage: ts-node 5-transfer-tokens.ts <MINT_ADDRESS> <RECIPIENT_ADDRESS> <AMOUNT>
+  if (process.argv.length < 5) {
+    console.log("Usage: ts-node 5-transfer-tokens.ts <MINT_ADDRESS> <RECIPIENT_ADDRESS> <AMOUNT>");
+    console.log("  <MINT_ADDRESS>: SPL token mint address");
+    console.log("  <RECIPIENT_ADDRESS>: recipient's wallet address");
+    console.log("  <AMOUNT>: amount to transfer in whole tokens (e.g. 1.5 for 1.5 tokens)");
+    process.exit(1);
+  }
+  const tokenMintAccount = new PublicKey(process.argv[2]);
+  const recipient = new PublicKey(process.argv[3]);
+
+  const amountInput = process.argv[4].trim();
+  let amountBN: BigNumber;
+  try {
+    amountBN = new BigNumber(amountInput);
+  } catch {
+    console.error("Amount must be a valid number.");
+    process.exit(1);
+  }
+  if (!amountBN.isFinite() || !amountBN.isPositive()) {
+    console.error("Amount must be a positive number in whole tokens.");
+    process.exit(1);
+  }
+
+  // Fetch mint info to get decimals
+  const mintInfo = await getMint(connection, tokenMintAccount);
+  const decimals = mintInfo.decimals;
+
+  // Convert to integer base units using bignumber.js to handle decimals and scientific notation
+  const amount = amountBN.shiftedBy(decimals).integerValue(BigNumber.ROUND_DOWN);
+  if (amount.decimalPlaces() !== 0) {
+    console.error(`Amount has more decimal places than the token supports (${decimals}).`);
+    process.exit(1);
+  }
+  if (amount.isLessThanOrEqualTo(0)) {
+    console.error("Amount must be greater than zero after conversion.");
+    process.exit(1);
+  }
+  const amountBigInt = BigInt(amount.toFixed(0));
 
   // ATAs
   const sourceAccount = await getOrCreateAta(connection, sender, tokenMintAccount, sender.publicKey);
   const destAccount = await getOrCreateAta(connection, sender, tokenMintAccount, recipient);
-
-  // Cantidad (100 con 2 decimales => ×100)
-  const amount = 100 * 100; // 100 × 10^2
 
   // Transferencia
   const tx = new Transaction().add(
@@ -78,7 +113,7 @@ async function main() {
       sourceAccount,
       destAccount,
       sender.publicKey,
-      amount,
+      amountBigInt,
       [],
       TOKEN_PROGRAM_ID
     )
@@ -86,8 +121,15 @@ async function main() {
 
   const signature = await sendAndConfirmTransaction(connection, tx, [sender]);
 
+  // Fetch and display supply
+  const supply = mintInfo.supply;
+  const formattedSupply = Number(supply) / Math.pow(10, decimals);
+
   console.log(
     `✅ Tokens transferred: ${getExplorerLink("transaction", signature, network as any)}`
+  );
+  console.log(
+    `Total supply on-chain: ${supply.toString()} (raw units), ${formattedSupply} (formatted with ${decimals} decimals)`
   );
 }
 
