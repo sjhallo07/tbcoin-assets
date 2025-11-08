@@ -1,14 +1,14 @@
 {
   "name": "TOKEN TB Coin",
   "symbol": "TB",
-  "image": "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/tbcoin_logo.png",
+  "image": "https://sjhallo07.github.io/tbcoin-assets/tbcoin_logo.png",
   "description": "Token TB Coin",
   "seller_fee_basis_points": 0,
   "attributes": [],
   "properties": {
     "files": [
       {
-        "uri": "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/tbcoin_logo.png",
+        "uri": "https://sjhallo07.github.io/tbcoin-assets/tbcoin_logo.png",
         "type": "image/png"
       }
     ]

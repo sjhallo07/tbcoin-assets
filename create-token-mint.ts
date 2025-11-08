@@ -1,10 +1,22 @@
-import { createMint } from "@solana/spl-token";
 import "dotenv/config";
 import {
   getKeypairFromEnvironment,
   getExplorerLink,
 } from "@solana-developers/helpers";
-import { Connection, clusterApiUrl, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  clusterApiUrl,
+  Keypair,
+  SystemProgram,
+  Transaction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
+import {
+  TOKEN_PROGRAM_ID,
+  MINT_SIZE,
+  createInitializeMintInstruction,
+} from "@solana/spl-token";
+import { MintLayout } from "@solana/spl-token";
 
 // Permitir elegir red por argumento CLI o endpoint personalizado
 const networkOrEndpoint = process.argv[2] || "devnet";
@@ -22,17 +34,33 @@ const user = getKeypairFromEnvironment("SECRET_KEY"); // keypair: 2upvUrj31kyhmy
 
 console.log(`🔑 Loaded keypair: ${user.publicKey.toBase58()}`);
 
-// Create Token Mint for TB Coin
+// Create Token Mint for TB Coin (manual without createMint helper)
 async function main() {
-  const tokenMint = await createMint(
-    connection,
-    user,           // payer
-    user.publicKey, // mint authority
-    null,           // freeze authority (null to disable freeze)
-    8               // decimals (8 like otros)
+  const mintKeypair = Keypair.generate();
+
+  const mintLen = MINT_SIZE;
+  const lamports = await connection.getMinimumBalanceForRentExemption(mintLen);
+
+  const space = MintLayout.span;
+
+  const tx = new Transaction().add(
+    SystemProgram.createAccount({
+      fromPubkey: user.publicKey,
+      newAccountPubkey: mintKeypair.publicKey,
+      space,
+      lamports,
+      programId: TOKEN_PROGRAM_ID,
+    }),
+    createInitializeMintInstruction(
+      mintKeypair.publicKey,
+      8,               // decimals
+      user.publicKey,  // mint authority
+      null             // freeze authority
+    )
   );
-  console.log(`✅ Token Mint created: ${tokenMint.toString()}`);
-  console.log(`🔗 Explorer: ${getExplorerLink("address", tokenMint.toString(), network as import("@solana/web3.js").Cluster)}`);
+
+  await sendAndConfirmTransaction(connection, tx, [user, mintKeypair]);
+  console.log(`🔗 Explorer: ${getExplorerLink("address", mintKeypair.publicKey.toString(), ["devnet","testnet","mainnet-beta"].includes(networkOrEndpoint) ? networkOrEndpoint as import("@solana/web3.js").Cluster : undefined)}`);
 }
 
 main();

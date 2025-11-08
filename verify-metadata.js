@@ -151,7 +151,7 @@ async function main() {
   }
   const expectedUri = sanitize(args[4]) || fromEnvUri || fallbackUri;
 
-  const expectedImage = sanitize(process.env.TOKEN_IMAGE_URL) || (ghPages ? `${ghPages}/social-preview.png` : undefined);
+  const expectedImage = sanitize(process.env.TOKEN_IMAGE_URL) || (ghPages ? `${ghPages}/tbcoin_logo.png` : undefined);
 
   const endpoint = resolveEndpoint(network, envNetwork);
   const connection = new Connection(endpoint, 'confirmed');

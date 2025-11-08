@@ -1,56 +1,97 @@
-// URI de metadata para el logo
-const metadataUri = "https://raw.githubusercontent.com/sjhallo07/tbcoin-assets/main/metadata.json";
-import { getOrCreateAssociatedTokenAccount, transfer } from "@solana/spl-token";
+// Script para transferir tokens SPL
 import 'dotenv/config';
+import {
+  getAssociatedTokenAddress,
+  getAccount,
+  createAssociatedTokenAccountInstruction,
+  createTransferInstruction,
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import {
   getExplorerLink,
   getKeypairFromEnvironment,
 } from "@solana-developers/helpers";
-import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
+import {
+  Connection,
+  PublicKey,
+  clusterApiUrl,
+  Keypair,
+  Transaction,
+  sendAndConfirmTransaction
+} from "@solana/web3.js";
 
-
-// Permitir elegir red y direcciones por argumento CLI
-// Permitir elegir red por argumento CLI o endpoint personalizado
-import type { Cluster } from "@solana/web3.js";
-const networkOrEndpoint = process.argv[2] || "devnet";
-let connection: Connection;
-if (["devnet", "testnet", "mainnet-beta"].includes(networkOrEndpoint)) {
-  connection = new Connection(clusterApiUrl(networkOrEndpoint as Cluster));
-} else {
-  // Si el argumento no es una red conocida, se asume que es un endpoint RPC personalizado
-  connection = new Connection(networkOrEndpoint);
+// Crea la ATA si no existe
+async function getOrCreateAta(
+  connection: Connection,
+  payer: Keypair,
+  mint: PublicKey,
+  owner: PublicKey
+): Promise<PublicKey> {
+  const ata = await getAssociatedTokenAddress(
+    mint,
+    owner,
+    false,
+    TOKEN_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+  try {
+    await getAccount(connection, ata);
+  } catch {
+    const tx = new Transaction().add(
+      createAssociatedTokenAccountInstruction(
+        payer.publicKey,
+        ata,
+        owner,
+        mint,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+    await sendAndConfirmTransaction(connection, tx, [payer]);
+  }
+  return ata;
 }
-const network = ["devnet", "testnet", "mainnet-beta"].includes(networkOrEndpoint)
-  ? networkOrEndpoint
-  : undefined;
-const sender = getKeypairFromEnvironment("SECRET_KEY");
 
-const tokenMintAccount = new PublicKey(process.argv[3] || "4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
-const recipient = new PublicKey(process.argv[4] || "6dCMwH4Wx4Sr1Q5TCGeV1ZMN8ihLcPpsP1wQ6Rka9Pgi");
+async function main() {
+  // Network (por defecto devnet)
+  const network = process.env.SOLANA_NETWORK || "devnet";
+  const connection = new Connection(clusterApiUrl(network as any));
 
-const sourceAccount = await getOrCreateAssociatedTokenAccount(
-  connection,
-  sender,
-  tokenMintAccount,
-  sender.publicKey
-);
+  // Keypair del emisor desde variable de entorno SECRET_KEY
+  const sender = getKeypairFromEnvironment("SECRET_KEY");
 
-// Crear la cuenta asociada del destinatario si no existe
-const destAccount = await getOrCreateAssociatedTokenAccount(
-  connection,
-  sender, // El payer paga el fee de creación
-  tokenMintAccount,
-  recipient
-);
+  // Mint y destinatario desde argumentos o valores por defecto
+  const tokenMintAccount = new PublicKey(process.argv[2] || "4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
+  const recipient = new PublicKey(process.argv[3] || "6dCMwH4Wx4Sr1Q5TCGeV1ZMN8ihLcPpsP1wQ6Rka9Pgi");
 
-// Transfer 100 TB Coins
-const signature = await transfer(
-  connection,
-  sender,
-  sourceAccount.address,
-  destAccount.address,
-  sender,
-  100 * 100 // 100 × 10^2
-);
+  // ATAs
+  const sourceAccount = await getOrCreateAta(connection, sender, tokenMintAccount, sender.publicKey);
+  const destAccount = await getOrCreateAta(connection, sender, tokenMintAccount, recipient);
 
-console.log(`✅ Tokens transferred: ${getExplorerLink("transaction", signature, ["devnet", "testnet", "mainnet-beta"].includes(networkOrEndpoint) ? networkOrEndpoint as Cluster : undefined)}`);
+  // Cantidad (100 con 2 decimales => ×100)
+  const amount = 100 * 100; // 100 × 10^2
+
+  // Transferencia
+  const tx = new Transaction().add(
+    createTransferInstruction(
+      sourceAccount,
+      destAccount,
+      sender.publicKey,
+      amount,
+      [],
+      TOKEN_PROGRAM_ID
+    )
+  );
+
+  const signature = await sendAndConfirmTransaction(connection, tx, [sender]);
+
+  console.log(
+    `✅ Tokens transferred: ${getExplorerLink("transaction", signature, network as any)}`
+  );
+}
+
+main().catch(err => {
+  console.error("❌ Error:", err);
+  process.exit(1);
+});

@@ -21,7 +21,7 @@
   "dependencies": {
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@solana-developers/helpers": "^2.3.0",
-    "@solana/spl-token": "^0.1.8",
+    "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
     "bip39": "^3.1.0",
     "dotenv": "^17.2.2",

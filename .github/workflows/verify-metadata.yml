@@ -3,7 +3,13 @@ name: Verify On-Chain Metadata
 on:
   push:
     paths:
-      - 'pretty-print-metadata.js'
+      - 'verify-metadata.js'
+      - 'metadata.json'
+      - 'tbcoin_token_metadata.json'
+  - 'tbcoin_logo.png'
+      - '.github/workflows/verify-metadata.yml'
+  schedule:
+    - cron: '0 6 * * 1'
   workflow_dispatch:
     inputs:
       network:
@@ -15,9 +21,15 @@ on:
         required: true
         default: '8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6'
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      DEFAULT_NETWORK: devnet
+      DEFAULT_MINT: 8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,15 +37,41 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run pretty-print metadata
-        env:
-          NETWORK: ${{ github.event.inputs.network || 'devnet' }}
-          MINT: ${{ github.event.inputs.mint || '8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6' }}
+      - name: Load expected metadata
+        id: expected
         run: |
-          echo "Running pretty-print for network=$NETWORK mint=$MINT"
-          node pretty-print-metadata.js "$NETWORK" "$MINT"
+          node <<'EOF'
+          const fs = require('fs');
+          const outputFile = process.env.GITHUB_OUTPUT;
+          const meta = JSON.parse(fs.readFileSync('tbcoin_token_metadata.json', 'utf8'));
+          const fields = ['name', 'symbol', 'uri', 'image'];
+          for (const field of fields) {
+            const value = (meta[field] || '').toString().trim();
+            if (value) {
+              fs.appendFileSync(outputFile, `${field}=${value}\n`);
+            }
+          }
+          EOF
+
+      - name: Verify on-chain metadata
+        env:
+          INPUT_NETWORK: ${{ github.event.inputs.network }}
+          INPUT_MINT: ${{ github.event.inputs.mint }}
+          DEFAULT_NETWORK: ${{ env.DEFAULT_NETWORK }}
+          DEFAULT_MINT: ${{ env.DEFAULT_MINT }}
+          TOKEN_NAME: ${{ steps.expected.outputs.name }}
+          TOKEN_SYMBOL: ${{ steps.expected.outputs.symbol }}
+          METADATA_URI: ${{ steps.expected.outputs.uri }}
+          TOKEN_IMAGE_URL: ${{ steps.expected.outputs.image }}
+        run: |
+          NETWORK="${INPUT_NETWORK:-$DEFAULT_NETWORK}"
+          MINT="${INPUT_MINT:-$DEFAULT_MINT}"
+          echo "Verifying mint ${MINT} on ${NETWORK}"
+          node verify-metadata.js "$NETWORK" "$MINT" "$TOKEN_NAME" "$TOKEN_SYMBOL" "$METADATA_URI"

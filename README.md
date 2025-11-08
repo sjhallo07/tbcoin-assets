@@ -310,7 +310,7 @@ Recorded results (devnet):
 - Token symbol: `TB`
 - Update authority (creator, base58): `2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY`
 - Off‑chain metadata JSON (hosted on GitHub Pages): `https://sjhallo07.github.io/tbcoin-assets/tbcoin_token_metadata.json`
-- Token image (logo): `https://sjhallo07.github.io/tbcoin-assets/social-preview.png`
+- Token image (logo): `https://sjhallo07.github.io/tbcoin-assets/tbcoin_logo.png`
 
 How to reproduce the checks locally
 
