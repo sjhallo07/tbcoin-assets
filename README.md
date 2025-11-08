@@ -294,3 +294,64 @@ Creado con ❤️ en Solana
 
 ---
 
+## 🧾 Run Summary (automated checks) — 2025-11-07
+
+This project includes runnable scripts to create and verify SPL token metadata on Solana (devnet). Below is a short, reproducible summary of what was executed locally and how to reproduce it.
+
+- Tests: Jest tests were run locally and passed (see `balance.test.js`).
+- Server: the Express server (`server.js`) can be started with `node server.js` and listens on port 3000 by default (Swagger UI at `/api-docs`).
+- Metadata verification: the included script `pretty-print-metadata.js` was used to read the on‑chain metadata for the devnet mint and print name, symbol and URI.
+
+Recorded results (devnet):
+
+- Mint address: `8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6`
+- Metadata PDA: `GvyJwr4N11A32DAx2ZQ2Y1oTNskPka5FgMEadDsVaVB`
+- Token name: `TOKEN TB Coin`
+- Token symbol: `TB`
+- Update authority (creator, base58): `2upvUrj31kyhmya7HJBTJVpFz2RtE2nXTwPr8vwHCHgY`
+- Off‑chain metadata JSON (hosted on GitHub Pages): `https://sjhallo07.github.io/tbcoin-assets/tbcoin_token_metadata.json`
+- Token image (logo): `https://sjhallo07.github.io/tbcoin-assets/social-preview.png`
+
+How to reproduce the checks locally
+
+1. Install dependencies:
+
+```powershell
+npm install
+```
+
+2. Run tests:
+
+```powershell
+npx jest --runInBand
+```
+
+3. Start the API server (Swagger UI available at http://localhost:3000/api-docs):
+
+```powershell
+node server.js
+```
+
+4. Verify on‑chain metadata (devnet):
+
+```powershell
+# Quick structured check (on-chain + off-chain JSON comparison)
+node verify-metadata.js devnet 8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6
+
+# Low-level view of raw PDA bytes (optional)
+node pretty-print-metadata.js devnet 8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6
+```
+
+5. (Optional) Update on‑chain metadata (requires a SECRET_KEY in `.env` and explicit consent):
+
+```powershell
+# Example (devnet):
+node update-metadata.js devnet 8n3oA4f1LvfFutDmLfuwpasH47JDDp9UtDi37dhAmPW6 tbcoin_token_metadata.json
+```
+
+Notes & next steps
+
+- If you want the metadata JSON + image pinned to IPFS for permanence, use `nft.storage` or `web3.storage` and update the JSON and on‑chain URI to `ipfs://<CID>/...`.
+- Avoid committing any private keys to the repository. Use `.env` (which is ignored by git) and `git rm --cached` if any secrets were accidentally staged.
+
+
