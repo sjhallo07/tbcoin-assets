@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express';
-import { body, param, query, validationResult } from 'express-validator';
-import { ApplicationContext } from './application';
+import { promises as fs } from 'fs';
+import { EventLogger } from './eventLogger';
 import { appConfig } from './config';
 import { TokenSnapshot, EventType, EventStatus } from './types';
 
@@ -22,11 +22,13 @@ const serialiseSnapshot = (snapshot: TokenSnapshot) => ({
   supply: snapshot.supply.toString(),
 });
 
-export const buildServer = (context: ApplicationContext): express.Application => {
+export const buildServer = (context: ApplicationContext): express.Application =>
+{
   const app = express();
   app.use(express.json({ limit: '1mb' }));
 
-  const validate = (req: Request, res: Response, next: NextFunction) => {
+  const validate = (req: Request, res: Response, next: NextFunction) =>
+  {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
@@ -56,7 +58,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
     '/api/contract/modify',
     contractModifyValidation,
     validate,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const { snapshot, event } = await context.contractManager.handleModification(req.body);
         res.json({ success: true, snapshot: serialiseSnapshot(snapshot), event });
@@ -70,7 +73,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
     '/api/contract/upgrade',
     contractUpgradeValidation,
     validate,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const event = await context.contractManager.handleUpgrade(req.body);
         res.json({ success: true, event });
@@ -80,7 +84,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
     },
   );
 
-  app.get('/api/contract/status', async (_req: Request, res: Response, next: NextFunction) => {
+  app.get('/api/contract/status', async (_req: Request, res: Response, next: NextFunction) =>
+  {
     try {
       const status = context.contractManager.getStatus();
       res.json({
@@ -96,7 +101,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
     }
   });
 
-  app.post('/api/contract/test-all', async (_req: Request, res: Response, next: NextFunction) => {
+  app.post('/api/contract/test-all', async (_req: Request, res: Response, next: NextFunction) =>
+  {
     try {
       const results = await context.testSuite.runCompleteTestSuite();
       res.json({ success: true, results });
@@ -112,7 +118,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
       body('amount').isString(),
     ],
     validate,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const { wallet } = req.body;
         const amount = BigInt(req.body.amount);
@@ -142,7 +149,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
       body('amount').isString(),
     ],
     validate,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const { from, to } = req.body;
         const amount = BigInt(req.body.amount);
@@ -172,7 +180,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
       body('amount').isString(),
     ],
     validate,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const { wallet } = req.body;
         const amount = BigInt(req.body.amount);
@@ -196,17 +205,18 @@ export const buildServer = (context: ApplicationContext): express.Application =>
 
   app.get(
     '/api/token/balance/:wallet',
-  [param('wallet').isString()],
-  validate,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { wallet } = req.params;
-      const account = context.tokenState.getBalance(wallet);
-      res.json({ success: true, balance: account.balance.toString() });
-    } catch (error) {
-      next(error);
-    }
-  },
+    [param('wallet').isString()],
+    validate,
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
+      try {
+        const { wallet } = req.params;
+        const account = context.tokenState.getBalance(wallet);
+        res.json({ success: true, balance: account.balance.toString() });
+      } catch (error) {
+        next(error);
+      }
+    },
   );
 
   app.post(
@@ -220,7 +230,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
       body('expiration').optional().isInt(),
     ],
     validate,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const order = context.orderManager.createOrder(req.body);
         await context.eventLogger.logEvent('ORDER_CREATED', { order }, 'CONFIRMED');
@@ -241,7 +252,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
       body('expiration').optional().isInt(),
     ],
     validate,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const { orderId } = req.params;
         const order = context.orderManager.editOrder(orderId, req.body);
@@ -257,7 +269,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
     '/api/orders/cancel/:orderId',
     [param('orderId').isString()],
     validate,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const { orderId } = req.params;
         const order = context.orderManager.cancelOrder(orderId);
@@ -276,7 +289,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
       query('status').optional().isIn(['OPEN', 'FILLED', 'CANCELLED']),
     ],
     validate,
-    (req: Request, res: Response, next: NextFunction) => {
+    (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const { wallet, status } = req.query;
         const history = context.orderManager.getHistory({
@@ -290,37 +304,91 @@ export const buildServer = (context: ApplicationContext): express.Application =>
     }
   );
 
-  app.get(
-    '/api/events/logs',
-    [
-      query('type').optional().isIn(VALID_EVENT_TYPES),
-      query('status').optional().isIn(VALID_EVENT_STATUSES),
-      query('fromBlock').optional().isInt(),
-      query('limit').optional().isInt(),
-    ],
-    validate,
-    async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const type = req.query.type;
-        const status = req.query.status;
-        const eventType = (type && VALID_EVENT_TYPES.includes(type as EventType))
-          ? (type as EventType)
-          : undefined;
-        const eventStatus = (status && VALID_EVENT_STATUSES.includes(status as EventStatus))
-          ? (status as EventStatus)
-          : undefined;
-        const logs = await context.eventLogger.getLogs({
-          type: eventType,
-          status: eventStatus,
-          fromBlock: req.query.fromBlock ? Number(req.query.fromBlock) : undefined,
-          limit: req.query.limit ? Number(req.query.limit) : undefined,
-        });
-        res.json({ success: true, logs });
-      } catch (error) {
-        next(error);
-      }
+  const eventLogger = new EventLogger();
+
+  // In-memory logs via EventLogger with optional filters
+  app.get('/api/events/logs', async (req, res) =>
+  {
+    const { type, status, fromBlock, limit } = req.query;
+    const filter = {
+      type: typeof type === 'string' ? type : undefined,
+      status: typeof status === 'string' ? status : undefined,
+      fromBlock: typeof fromBlock === 'string' ? Number(fromBlock) : undefined,
+      limit: typeof limit === 'string' ? Number(limit) : undefined,
+    };
+    try {
+      const logs = await eventLogger.getLogs(filter);
+      res.json({ success: true, logs });
+    } catch (err) {
+      res.status(500).json({ success: false, error: (err as Error).message });
     }
-  );
+  });
+
+  // Raw logfile reader (JSON array at appConfig.eventLogFile)
+  app.get('/api/events/logfile', async (_req, res) =>
+  {
+    try {
+      const content = await fs.readFile(appConfig.eventLogFile, 'utf-8');
+      const logs = JSON.parse(content);
+      res.json({ success: true, logs });
+    } catch (err) {
+      res.status(500).json({ success: false, error: (err as Error).message });
+    }
+  });
+
+  // Stream updates from the log file via SSE, tailing newly appended events
+  app.get('/api/events/logfile-stream', async (_req: Request, res: Response, next: NextFunction) =>
+  {
+    try {
+      const filePath = appConfig.eventLogFile;
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders();
+
+      let lastCount = 0;
+
+      const sendEvents = async () =>
+      {
+        try {
+          const content = await fs.readFile(filePath, 'utf-8');
+          const logs = JSON.parse(content) as Array<Record<string, unknown>>;
+          if (logs.length > lastCount) {
+            const newEvents = logs.slice(lastCount);
+            for (const ev of newEvents) {
+              res.write(`data: ${JSON.stringify(ev)}\n\n`);
+            }
+            lastCount = logs.length;
+          }
+        } catch (err) {
+          // If the file isn't ready yet, ignore and retry on next change
+        }
+      };
+
+      // Initial dump (if any)
+      await sendEvents();
+
+      const heartbeat = setInterval(() =>
+      {
+        res.write(':\n\n');
+      }, 15000);
+
+      const watcher = fsSync.watch(filePath, { persistent: true }, async () =>
+      {
+        await sendEvents();
+      });
+
+      res.on('close', () =>
+      {
+        clearInterval(heartbeat);
+        watcher.close();
+        res.end();
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
   app.post(
     '/api/events/resume',
     [
@@ -329,7 +397,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
       body('checkpoint').optional().isString(),
     ],
     validate,
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction) =>
+    {
       try {
         const summary = await context.testSuite.resumeFromLogs(req.body);
         res.json({ success: true, summary });
@@ -339,28 +408,33 @@ export const buildServer = (context: ApplicationContext): express.Application =>
     },
   );
 
-  app.get('/api/events/realtime', (req: Request, res: Response) => {
+  app.get('/api/events/realtime', (req: Request, res: Response) =>
+  {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    const heartbeat = setInterval(() => {
+    const heartbeat = setInterval(() =>
+    {
       res.write(':\n\n');
     }, 15000);
 
-    const unsubscribe = context.eventLogger.subscribe((event) => {
+    const unsubscribe = context.eventLogger.subscribe((event) =>
+    {
       res.write(`data: ${JSON.stringify(event)}\n\n`);
     });
 
-    req.on('close', () => {
+    req.on('close', () =>
+    {
       clearInterval(heartbeat);
       unsubscribe();
       res.end();
     });
   });
 
-  app.get('/api/health', async (_req: Request, res: Response) => {
+  app.get('/api/health', async (_req: Request, res: Response) =>
+  {
     res.json({
       success: true,
       network: appConfig.solanaNetwork,
@@ -368,7 +442,8 @@ export const buildServer = (context: ApplicationContext): express.Application =>
     });
   });
 
-  app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((error: Error, _req: Request, res: Response, _next: NextFunction) =>
+  {
     res.status(500).json({ success: false, error: error.message });
   });
 
