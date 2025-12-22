@@ -1,8 +1,11 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { promises as fs } from 'fs';
+import * as fsSync from 'fs'; // added: for fs.watch in SSE
 import { EventLogger } from './eventLogger';
 import { appConfig } from './config';
 import { TokenSnapshot, EventType, EventStatus } from './types';
+import { body, param, query, validationResult } from 'express-validator'; // added: validators
+import type { ApplicationContext } from './application'; // added: ApplicationContext type
 
 // Derive valid event statuses from EventStatus type
 const VALID_EVENT_STATUSES: EventStatus[] = ['CONFIRMED', 'FAILED', 'PENDING'];
@@ -307,7 +310,7 @@ export const buildServer = (context: ApplicationContext): express.Application =>
   const eventLogger = new EventLogger();
 
   // In-memory logs via EventLogger with optional filters
-  app.get('/api/events/logs', async (req, res) =>
+  app.get('/api/events/logs', async (req: Request, res: Response) =>
   {
     const { type, status, fromBlock, limit } = req.query;
     const filter = {
@@ -317,7 +320,7 @@ export const buildServer = (context: ApplicationContext): express.Application =>
       limit: typeof limit === 'string' ? Number(limit) : undefined,
     };
     try {
-      const logs = await eventLogger.getLogs(filter);
+      const logs = await context.eventLogger.getLogs(filter); // fixed: use context.eventLogger
       res.json({ success: true, logs });
     } catch (err) {
       res.status(500).json({ success: false, error: (err as Error).message });
@@ -325,7 +328,7 @@ export const buildServer = (context: ApplicationContext): express.Application =>
   });
 
   // Raw logfile reader (JSON array at appConfig.eventLogFile)
-  app.get('/api/events/logfile', async (_req, res) =>
+  app.get('/api/events/logfile', async (_req: Request, res: Response) =>
   {
     try {
       const content = await fs.readFile(appConfig.eventLogFile, 'utf-8');
@@ -437,7 +440,7 @@ export const buildServer = (context: ApplicationContext): express.Application =>
   {
     res.json({
       success: true,
-      network: appConfig.solanaNetwork,
+      network: appConfig.network, // fixed: was appConfig.solanaNetwork
       lastEventBlock: await context.eventLogger.getLastBlockNumber(),
     });
   });
