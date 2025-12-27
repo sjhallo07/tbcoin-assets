@@ -4,6 +4,8 @@
   "description": "This package defines a GraphQL client resolver built on top of the\r [Solana JSON-RPC](https://docs.solana.com/api/http).",
   "main": "index.js",
   "scripts": {
+    "test": "jest --forceExit --testTimeout=10000",
+    "test:blockchain": "jest blockchain-endpoints.test.js --forceExit"
     "build": "tsc",
     "start": "node dist/src/index.js",
     "dev": "ts-node src/index.ts",
