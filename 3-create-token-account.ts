@@ -27,7 +27,9 @@ const network = ["devnet", "testnet", "mainnet-beta"].includes(networkOrEndpoint
 const user = getKeypairFromEnvironment("SECRET_KEY");
 
 // REPLACE WITH YOUR TOKEN MINT
-const tokenMintAccount = new PublicKey(process.argv[3] || "4Ci4xVxKDdB4bLB2CASFtV2qxCpMg9BRBfFus5wv2ThD");
+const tokenMintAccount = new PublicKey(
+  process.argv[3] || process.env.MINT_ADDRESS || ""
+);
 
 const tokenAccount = await getOrCreateAssociatedTokenAccount(
   connection,

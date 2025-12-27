@@ -1,6 +1,3 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
 name: Node.js CI
 
 on:
@@ -8,6 +5,9 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -21,11 +21,47 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Detect optional scripts
+      id: scripts
+      run: |
+        node <<'EOF'
+        const fs = require('fs');
+        const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+        const scripts = pkg.scripts || {};
+        const placeholder = 'echo "Error: no test specified" && exit 1';
+        const outputs = {
+          has_build: Boolean(scripts.build && scripts.build.trim()),
+          has_lint: Boolean(scripts.lint && scripts.lint.trim()),
+          has_test: Boolean(scripts.test && scripts.test.trim() && scripts.test.trim() !== placeholder),
+        };
+        const outputFile = process.env.GITHUB_OUTPUT;
+        const lines = Object.entries(outputs)
+          .map(([key, value]) => `${key}=${value}`)
+          .join('\n');
+        fs.appendFileSync(outputFile, `${lines}\n`);
+        EOF
+
+    - name: Run build
+      if: steps.scripts.outputs.has_build == 'true'
+      run: npm run build
+
+    - name: Run lint
+      if: steps.scripts.outputs.has_lint == 'true'
+      run: npm run lint
+
+    - name: Run tests
+      if: steps.scripts.outputs.has_test == 'true'
+      env:
+        CI: true
+      run: npm test
