@@ -27,4 +27,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 1 }
-      - run: echo "Static assets repo: no build" 
+      - run: echo "Static assets repo: no build"
