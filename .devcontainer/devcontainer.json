@@ -1,6 +1,6 @@
 {
-  "name": "Node Devcontainer",
-  "image": "mcr.microsoft.com/devcontainers/node:20",
+  "name": "Devcontainer Base",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "postCreateCommand": "true",
-  "customizations": { "vscode": { "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"] } }
+  "customizations": { "vscode": { "extensions": ["GitHub.copilot", "GitHub.copilot-chat"], "settings": { "files.autoSave": "onFocusChange", "editor.formatOnSave": true } } }
 }
